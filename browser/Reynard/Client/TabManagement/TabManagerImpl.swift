@@ -1341,6 +1341,14 @@ extension TabManagerImplementation: ContentDelegate {
         guard let location = tabLocation(for: session) else {
             return
         }
+        if SiteMode.isEnabled {
+            // window.close() closes a window over the site, never the site itself.
+            let tab = tabs(for: location.mode)[location.index]
+            if isSiteModeWindow(tab) {
+                closeSiteModeWindow(tab.id)
+            }
+            return
+        }
         removeTab(at: location.index, mode: location.mode, behavior: .recent)
     }
     
@@ -1686,8 +1694,12 @@ extension TabManagerImplementation: NavigationDelegate {
             // recoverSelectedSessionIfNeeded() replace it and cut the popup off from its opener.
             DispatchQueue.main.async { [weak self] in
                 guard let self,
-                      newSession.isOpen(),
                       let location = self.tabLocation(for: newTab.id) else {
+                    return
+                }
+                guard newSession.isOpen() else {
+                    // With no tab strip, a window that never opened could not be reached.
+                    self.closeSiteModeWindow(newTab.id)
                     return
                 }
                 self.selectTab(at: location.index, mode: location.mode)
@@ -1716,6 +1728,17 @@ extension TabManagerImplementation {
     /// it: a popup the site opened, or a tab an add-on opened.
     func isSiteModeWindow(_ tab: Tab) -> Bool {
         return tab.state.openerTabID != nil || regularTabs.first !== tab
+    }
+    
+    /// Closes a window over the site. A site app always keeps its site: if no regular tab is
+    /// left, the start page opens again.
+    func closeSiteModeWindow(_ tabID: UUID) {
+        if let location = tabLocation(for: tabID) {
+            removeTab(at: location.index, mode: location.mode, behavior: .recent)
+        }
+        if regularTabs.isEmpty {
+            createInitialTab()
+        }
     }
     
     /// Site mode's answer for a top-level load, or nil to keep Reynard's own handling.
@@ -1769,10 +1792,7 @@ extension TabManagerImplementation {
             if place == .newWindow, let tabID = tab?.id {
                 // The window was opened only for this link.
                 DispatchQueue.main.async { [weak self] in
-                    guard let self, let location = self.tabLocation(for: tabID) else {
-                        return
-                    }
-                    self.removeTab(at: location.index, mode: location.mode, behavior: .recent)
+                    self?.closeSiteModeWindow(tabID)
                 }
             }
             return .deny

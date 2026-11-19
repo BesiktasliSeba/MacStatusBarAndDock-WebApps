@@ -660,7 +660,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         }
         
         if tabManager.isSiteModeWindow(tab) {
-            tabManager.removeTab(at: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode, behavior: .recent)
+            tabManager.closeSiteModeWindow(tab.id)
         } else {
             tabManager.browse(to: siteMode.startURL.absoluteString)
         }
