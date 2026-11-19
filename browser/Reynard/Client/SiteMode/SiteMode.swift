@@ -115,7 +115,7 @@ nonisolated struct SiteMode {
         guard let siteMode = infoDictionary?["SiteMode"] as? [String: Any],
               let startValue = siteMode["StartURL"] as? String,
               let startURL = URL(string: startValue),
-              URLUtils.isWebURL(startURL),
+              Self.isWebURL(startURL),
               let startOrigin = ScopeRule(startURL.absoluteString) else {
             return nil
         }
@@ -176,7 +176,7 @@ nonisolated struct SiteMode {
         if url.scheme?.lowercased() == "about" {
             return .stay
         }
-        guard URLUtils.isWebURL(url) else {
+        guard Self.isWebURL(url) else {
             return nil
         }
         switch request.target {
@@ -273,6 +273,17 @@ nonisolated struct SiteMode {
     }
 
     // MARK: - Helpers
+
+    /// An http or https URL with a host. The same test as URLUtils.isWebURL, kept here because
+    /// URLUtils belongs to the main actor and SiteMode is used from any thread.
+    static func isWebURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased(),
+              let host = url.host,
+              !host.isEmpty else {
+            return false
+        }
+        return scheme == "http" || scheme == "https"
+    }
 
     fileprivate static func defaultPort(for scheme: String) -> Int {
         return scheme == "http" ? 80 : 443
