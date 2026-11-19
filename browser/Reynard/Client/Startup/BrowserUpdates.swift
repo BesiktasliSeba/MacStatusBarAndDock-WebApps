@@ -23,6 +23,12 @@ final class BrowserUpdates: NSObject {
         let sideloadIPA = docs.appendingPathComponent("Reynard.ipa")
         try? FileManager.default.removeItem(at: sideloadIPA)
         
+        // A site app never checks for or offers Reynard updates. Without a check, hasUpdate
+        // stays false and every update surface (Settings, Library, homepage) stays hidden.
+        guard !SiteMode.isEnabled else {
+            return
+        }
+        
         fetchUpdates()
     }
     
