@@ -5,7 +5,7 @@
 # tools/development/build-gecko.sh would, so browser/Scripts/AddGecko.sh and the Xcode project
 # work unchanged:
 #   dist/bin                      XUL, the engine dylibs, GeckoView.framework/Frameworks files
-#   dist/include/GeckoView        IOSBootstrap.h and GeckoViewSwiftSupport.h with Reynard's patches, and Reynard's GeckoViewRuntimeSupport.h
+#   dist/include                  the Gecko headers the app layer includes (stage-headers.sh)
 #   toolkit/.../default-theme     the release's default theme, which AddGecko.sh copies back
 #
 # Usage: tools/sitemode/stage-engine.sh [path to the .tipa]
@@ -59,7 +59,7 @@ echo "$ENGINE_SHA256  $TIPA" | shasum -a 256 -c -
 
 # 1. The engine from the release, as build-gecko.sh would leave it in dist/bin.
 rm -rf "$WORK_DIR/unpacked" "$GECKO_DIST"
-mkdir -p "$WORK_DIR/unpacked" "$GECKO_DIST/bin" "$GECKO_DIST/include/GeckoView"
+mkdir -p "$WORK_DIR/unpacked" "$GECKO_DIST/bin"
 unzip -q "$TIPA" 'Payload/Reynard.app/Frameworks/*' -d "$WORK_DIR/unpacked"
 FRAMEWORKS="$WORK_DIR/unpacked/Payload/Reynard.app/Frameworks"
 cp -p "$FRAMEWORKS/XUL" "$GECKO_DIST/bin/"
@@ -79,15 +79,8 @@ mv "$GECKO_DIST/bin/default-theme" "$THEME_DIR"
 grep -v '^resource default-theme ' "$GECKO_DIST/bin/chrome.manifest" > "$WORK_DIR/chrome.manifest"
 mv "$WORK_DIR/chrome.manifest" "$GECKO_DIST/bin/chrome.manifest"
 
-# 2. The Gecko headers the app layer includes: two from the pinned Firefox commit plus Reynard's patches, and one that Reynard's patches add.
-for header in toolkit/xre/IOSBootstrap.h widget/uikit/GeckoViewSwiftSupport.h; do
-	name="$(basename "$header")"
-	curl --fail --silent --show-error --location --output "$GECKO_DIST/include/GeckoView/$name" \
-		"https://raw.githubusercontent.com/mozilla-firefox/firefox/$FIREFOX_COMMIT/$header"
-	patch --silent -p3 -d "$GECKO_DIST/include/GeckoView" "$name" < "$ROOT_DIR/patches/$header.patch"
-done
-# IOSBootstrap.h includes GeckoView/GeckoViewRuntimeSupport.h, a header Reynard's own patch adds (it is not in Firefox).
-patch --silent -p3 -d "$GECKO_DIST/include/GeckoView" < "$ROOT_DIR/patches/widget/uikit/GeckoViewRuntimeSupport.h.patch"
+# 2. The Gecko headers the app layer includes, from the pinned Firefox commit and Reynard's patches.
+"$SCRIPT_DIR/stage-headers.sh" "$GECKO_DIST"
 
 rm -rf "$WORK_DIR/unpacked"
 echo "Staged Reynard $ENGINE_TAG's engine in $GECKO_DIST"
