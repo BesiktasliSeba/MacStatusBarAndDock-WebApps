@@ -37,8 +37,12 @@ struct LinkPreviewMenu {
         } : nil
         
         return UIContextMenuConfiguration(identifier: url as NSURL, previewProvider: previewProvider) { _ in
+            // A site app has no tabs: the link opens in the browser.
+            let openTitle = SiteMode.isEnabled
+            ? NSLocalizedString("Open Link in Browser", comment: "Site mode: open a link in the browser")
+            : NSLocalizedString("Open Link in New Tab", comment: "")
             var linkActions: [UIMenuElement] = [
-                UIAction(title: NSLocalizedString("Open Link in New Tab", comment: ""), image: UIImage(named: "reynard.plus.square.on.square")) { _ in
+                UIAction(title: openTitle, image: UIImage(named: "reynard.plus.square.on.square")) { _ in
                     openInNewTab()
                 },
             ]

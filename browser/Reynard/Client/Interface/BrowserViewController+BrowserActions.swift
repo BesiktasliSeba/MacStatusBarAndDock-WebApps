@@ -105,6 +105,11 @@ extension BrowserViewController {
                 tab.session.reload()
             }
         case let .openLink(url):
+            if let siteMode = SiteMode.current {
+                // A site app has no tabs: the link opens in the browser.
+                siteMode.openOutside(url)
+                return
+            }
             let index = tabManager.createTab(selecting: true, target: .afterSelected)
             guard let tab = tabManager.activeTabs[safe: index] else {
                 return

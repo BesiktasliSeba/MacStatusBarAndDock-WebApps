@@ -38,6 +38,12 @@ final class CompatibilityPreferencesViewController: SettingsTableViewController 
             || !Prefs.CompatibilitySettings.customBuildID.isEmpty {
             return NSLocalizedString("Custom", comment: "")
         }
+        if SiteMode.isEnabled {
+            // A site app does not name the browser it is built from.
+            return Prefs.BrowsingSettings.requestDesktopWebsite
+            ? NSLocalizedString("Desktop", comment: "Site mode: the desktop website mode")
+            : NSLocalizedString("Mobile", comment: "Site mode: the mobile website mode")
+        }
         return Prefs.BrowsingSettings.requestDesktopWebsite ? NSLocalizedString("Desktop Firefox", comment: "") : NSLocalizedString("Firefox for Android", comment: "")
     }
     

@@ -51,7 +51,8 @@ final class SelectionActionMenuHostView: UITextView {
         }
         
         if action == #selector(findSelectedText(_:)) {
-            return selectedRange.length > 0
+            // Site mode has no find bar.
+            return selectedRange.length > 0 && !SiteMode.isEnabled
         }
         
         return super.canPerformAction(action, withSender: sender)

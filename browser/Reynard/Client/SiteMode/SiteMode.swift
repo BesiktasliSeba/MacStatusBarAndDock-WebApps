@@ -262,9 +262,10 @@ nonisolated struct SiteMode {
 
     // MARK: - Name
 
-    /// Puts the app's own name in place of "Reynard" in a user-visible string.
+    /// Puts the app's own name in place of "Reynard" in a user-visible string. Credit lines,
+    /// which name Reynard's author, keep Reynard's name.
     static func appNamed(_ text: String) -> String {
-        guard let current else {
+        guard let current, !text.contains("Minh Ton") else {
             return text
         }
         return text

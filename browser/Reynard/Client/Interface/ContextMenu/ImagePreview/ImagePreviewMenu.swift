@@ -29,10 +29,17 @@ struct ImagePreviewMenu {
         } : nil
         
         return UIContextMenuConfiguration(identifier: UUID().uuidString as NSString, previewProvider: previewProvider) { _ in
+            // A site app has no tabs: links and images open in the browser.
+            let openLinkTitle = SiteMode.isEnabled
+            ? NSLocalizedString("Open Link in Browser", comment: "Site mode: open a link in the browser")
+            : NSLocalizedString("Open Link in New Tab", comment: "")
+            let openImageTitle = SiteMode.isEnabled
+            ? NSLocalizedString("Open Image in Browser", comment: "Site mode: open an image in the browser")
+            : NSLocalizedString("Open Image in New Tab", comment: "")
             var children: [UIMenuElement] = []
             if let linkURL {
                 var linkActions: [UIMenuElement] = [
-                    UIAction(title: NSLocalizedString("Open Link in New Tab", comment: ""), image: UIImage(named: "reynard.plus.square.on.square")) { _ in
+                    UIAction(title: openLinkTitle, image: UIImage(named: "reynard.plus.square.on.square")) { _ in
                         openLinkInNewTab(linkURL)
                     },
                 ]
@@ -50,7 +57,7 @@ struct ImagePreviewMenu {
             
             children.append(
                 UIMenu(title: "", options: .displayInline, children: [
-                    UIAction(title: NSLocalizedString("Open Image in New Tab", comment: ""), image: UIImage(named: "reynard.plus.square.on.square")) { _ in
+                    UIAction(title: openImageTitle, image: UIImage(named: "reynard.plus.square.on.square")) { _ in
                         openImageInNewTab()
                     },
                     UIAction(title: NSLocalizedString("Share Image", comment: ""), image: UIImage(named: "reynard.square.and.arrow.up")) { _ in

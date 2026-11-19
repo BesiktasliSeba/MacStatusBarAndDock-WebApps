@@ -90,7 +90,9 @@ enum UserDataExporter {
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.timeZone = .current
         formatter.dateFormat = "yyyy-MM-dd"
-        return "Reynard Export \(formatter.string(from: Date())).zip"
+        // A site app names exports after itself; a "/" in its name would make a folder.
+        let appName = (SiteMode.current?.appName ?? "Reynard").replacingOccurrences(of: "/", with: "-")
+        return "\(appName) Export \(formatter.string(from: Date())).zip"
     }
     
     private static func writeArchive(from directory: URL, types: [UserDataType], to fileURL: URL) async throws {
