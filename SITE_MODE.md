@@ -32,11 +32,12 @@ The default scope is narrow on purpose. Whoever writes the keys should usually g
   - Redirects and scripted navigations stay in the app, so sign-in flows that pass through an identity provider work. Sign-in requests (OAuth 2.0, OpenID Connect, SAML, WS-Federation) also stay.
   - Every window the site opens with `window.open()` (a sign-in window, a payment window, or a blank window it fills in) opens in the app, over the site, and keeps every page it loads.
   - A link with `target="_blank"` also opens a window first, because the engine asks for both kinds of window the same way. The window's first load decides: when it is a link the person followed to another site, the link opens in the browser and the window closes again, so the window can show for a moment.
-  - A window that calls `window.close()` closes and the site shows again. The site's own page cannot close the app: a `window.close()` from it is ignored.
+  - A window that calls `window.close()` closes and the site shows again. The site's own page cannot close the app. When it calls `window.close()`, the engine has already marked its window closed and would drop every message posted to it, so the site opens again at its start page in a new session. A page that closes itself again within 10 seconds of that stays as it is.
   - Other URL schemes (`mailto:`, `tel:`, other apps) work as in Reynard.
 - **A slim bar** appears only while a window over the site (a popup the site opened, or a tab an add-on opened) or a page outside the scope is showing. It names the page's host. Its button closes that window, or goes back to the start page.
-- **Library and Settings.** The Library shows Downloads and Settings only. Its links open in the browser, About links to this fork's source, and clearing open tabs returns to the start page.
+- **Library and Settings.** The Library shows Downloads and Settings only, as a sheet (there is no sidebar on iPad either). Its links open in the browser, About links to this fork's source, and clearing open tabs returns to the start page.
 - **Menus and keyboard shortcuts** are the site's: Print, Open in Browser, Copy Link, Downloads and Settings; Back, Forward and Home; Reload and zoom. Browser commands (tabs, address bar, history and bookmark lists, reader, sidebar, Find in Page, Find Selection) are removed. Link and image menus offer Open Link in Browser and Open Image in Browser, and link previews are off. Links on error pages open in the browser.
+- **No reload loop.** When a page's content process is killed, Reynard reloads the page. In site mode the third kill of one page's process within 30 seconds shows Page Stopped Working with Try Again instead.
 - **The updater is off.** A site app never checks for or offers Reynard updates.
 - **Its own name.** Text that would name Reynard shows the app's `CFBundleDisplayName` instead, including untitled print jobs and data exports. Credit lines that name Minh Ton keep Reynard's name. Settings call the website mode Desktop or Mobile, not Firefox.
 
@@ -56,6 +57,8 @@ Site mode decides from what the engine reports about each load:
 - No `UIRequiresFullScreen`, so the app can be used in windows.
 - `UTImportedTypeDeclarations` (Firefox Add-on Package) can be removed: a site app does not install add-ons from files.
 - The same entitlements as Reynard's TrollStore build, with the app's own `application-identifier`.
+- On a Dopamine jailbreak, the app and its Helper signed with `jb.pmap_cs.custom_trust` set to `PMAP_CS_APP_STORE`, as TrollStore Lite signs apps. Without it they run as first-party binaries, and iPadOS 18.5 kills the Helper (`EXC_GUARD` in `thread_set_exception_ports`) when a page uses WebAssembly. The engine's own binaries can stay as the release signs them.
+- When the app is removed: iPadOS keeps each Helper crash report twice, in `/var/mobile/Library/Logs/CrashReporter` and in `/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.osanalytics/DiagnosticReports`, named after the Helper's executable. The remover can delete the app's own reports by that name in both folders.
 
 ## Building
 
