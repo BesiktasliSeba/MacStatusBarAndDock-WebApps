@@ -97,6 +97,16 @@ nonisolated struct SiteMode {
         case openOutside(URL)
     }
 
+    /// Where a top-level load happens.
+    nonisolated enum Place: Equatable {
+        /// The site's own window.
+        case site
+        /// A window the site opened, shown over the site.
+        case window
+        /// A window the site just opened, at the first load it was opened for.
+        case newWindow
+    }
+
     let startURL: URL
     let scope: [ScopeRule]
     let appName: String
@@ -145,17 +155,21 @@ nonisolated struct SiteMode {
     /// keep Reynard's own handling (mailto:, tel:, other apps' schemes).
     ///
     /// - about: pages stay: a site opens a blank window and then fills it in (sign-in windows).
+    /// - Every new window the site asks for opens in the app. Gecko asks the same way for
+    ///   window.open() and for a link with target="_blank", so the window's first load decides
+    ///   (`Place.newWindow`).
+    /// - Links opened in the background (Command-click) open outside: there are no tabs here.
     /// - Pages inside the scope stay.
-    /// - Everything inside a window the site opened stays, so sign-in windows can move between
-    ///   hosts and report back to the page that opened them.
     /// - Sign-in requests (OAuth 2.0, OpenID Connect, SAML, WS-Federation) stay, so a site that
     ///   sends the whole page to its identity provider still signs in.
+    /// - Everything inside a window the site opened stays, so sign-in windows can move between
+    ///   hosts and report back to the page that opened them.
+    /// - A new window whose first load is a link the person followed to another site was opened
+    ///   by a link with target="_blank": it opens outside. A window the site opened by script
+    ///   (window.open(), a sign-in window) does not start with a followed link, so it stays.
     /// - In the app's own window, only a link the person follows from one of the site's pages
     ///   opens outside. Redirects and scripted navigations stay.
-    /// - New windows stay when the page asked for a popup window (window.open() with window
-    ///   features), and open outside when they are links with target="_blank".
-    /// - Links opened in the background (Command-click) open outside: there are no tabs here.
-    func navigation(for request: LoadRequest, inPopup: Bool, pageURL: String?) -> Navigation? {
+    func navigation(for request: LoadRequest, in place: Place, pageURL: String?) -> Navigation? {
         guard let url = URL(string: request.uri) else {
             return nil
         }
@@ -165,21 +179,30 @@ nonisolated struct SiteMode {
         guard URLUtils.isWebURL(url) else {
             return nil
         }
-        if request.target == .background {
+        switch request.target {
+        case .background:
             return .openOutside(url)
+        case .new:
+            return .stay
+        case .current:
+            break
         }
-        if contains(url) || inPopup || Self.isSignInRequest(url) {
+        if contains(url) || Self.isSignInRequest(url) {
             return .stay
         }
 
-        switch request.target {
-        case .current:
-            guard request.isUserInitiatedNavigation, !request.isRedirect else {
+        // Reynard's engine marks a link the person followed (not a redirect, not a script).
+        let isFollowedLink = request.isUserInitiatedNavigation && !request.isRedirect
+        switch place {
+        case .window:
+            return .stay
+        case .newWindow:
+            return isFollowedLink ? .openOutside(url) : .stay
+        case .site:
+            guard isFollowedLink else {
                 return .stay
             }
             return contains(request.triggerUri ?? pageURL) ? .openOutside(url) : .stay
-        case .new, .background:
-            return request.isPopupWindow ? .stay : .openOutside(url)
         }
     }
 

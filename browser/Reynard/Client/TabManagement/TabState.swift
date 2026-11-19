@@ -60,6 +60,8 @@ final class TabSessionState {
     var suppressInitialNavigation = true
     var isSuppressingInitialBlankPageLoad = false
     var openerTabID: UUID?
+    /// Site mode: the URL a new window was opened for, until its first navigation.
+    var siteModeOpeningURL: String?
     var sessionNavigationAvailability = SessionNavigationAvailability.unavailable
     var navigationState = NavigationAvailability(canGoBack: false, canGoForward: false)
     var pendingHistoryNavigations: [HistoryNavigationDirection] = []

@@ -1679,6 +1679,8 @@ extension TabManagerImplementation: NavigationDelegate {
         persistState()
         
         if SiteMode.isEnabled {
+            // The window's first navigation tells a followed link from a script's window.open().
+            newTab.state.siteModeOpeningURL = uri
             // No tab strip here: the window the site opened shows over the site. GeckoView opens
             // the new session right after this returns; selecting it before that would make
             // recoverSelectedSessionIfNeeded() replace it and cut the popup off from its opener.
@@ -1722,6 +1724,11 @@ extension TabManagerImplementation {
     /// where isUserInitiatedNavigation means a link the person followed, then through
     /// onLoadRequest, where it only means a user gesture. Links leave the app only from the
     /// first, so a sign-in button that moves the page by script stays in the app.
+    ///
+    /// A new window is asked about through onLoadRequest in the window that opens it, the same
+    /// way for window.open() and for a link with target="_blank", so it always opens. Its first
+    /// onPreNavigation then still carries the followed link: a link to another site goes to the
+    /// browser and its window closes again.
     private func siteModeDecision(
         for request: LoadRequest,
         in session: GeckoSession,
@@ -1738,11 +1745,19 @@ extension TabManagerImplementation {
         }
         
         let tab = tabLocation(for: session).map { tabs(for: $0.mode)[$0.index] }
-        switch siteMode.navigation(
-            for: request,
-            inPopup: tab.map(isSiteModeWindow) ?? false,
-            pageURL: tab?.url
-        ) {
+        var place = SiteMode.Place.site
+        if let tab, isSiteModeWindow(tab) {
+            place = .window
+            if isPreNavigation, let openingURL = tab.state.siteModeOpeningURL {
+                // Only the window's first navigation can be the link that opened it.
+                tab.state.siteModeOpeningURL = nil
+                if openingURL == request.uri {
+                    place = .newWindow
+                }
+            }
+        }
+        
+        switch siteMode.navigation(for: request, in: place, pageURL: tab?.url) {
         case nil:
             return nil
         case .stay:
@@ -1750,6 +1765,15 @@ extension TabManagerImplementation {
         case .openOutside(let url):
             Task { @MainActor in
                 siteMode.openOutside(url)
+            }
+            if place == .newWindow, let tabID = tab?.id {
+                // The window was opened only for this link.
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, let location = self.tabLocation(for: tabID) else {
+                        return
+                    }
+                    self.removeTab(at: location.index, mode: location.mode, behavior: .recent)
+                }
             }
             return .deny
         }
