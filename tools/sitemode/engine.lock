@@ -1,0 +1,9 @@
+# The official Reynard release whose engine the site mode app layer is built against.
+# The app layer must be built from that release's commit (APP_COMMIT); a newer commit can need
+# a newer engine. ENGINE_SHA256 is GitHub's digest for the asset.
+ENGINE_TAG=0.22.1
+ENGINE_ASSET=Reynard-TrollStore.tipa
+ENGINE_SIZE=113747270
+ENGINE_SHA256=c85c88c27371de0002721e137d3e590a31fe399a8e3058a871ceff0d82f7d91f
+APP_COMMIT=2222a37ebba2feb73ab91ff2f3a86bf36c990490
+FIREFOX_COMMIT=2887d9de1f69c0e9776413da80e7ba0d1225dd9b
