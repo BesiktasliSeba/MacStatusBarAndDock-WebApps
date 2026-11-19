@@ -1,5 +1,5 @@
 > [!NOTE]
-> **This is a fork.** MacStatusBarAndDock-WebApps is a fork of [Reynard](https://github.com/minh-ton/reynard-browser) by Minh Ton, with a site mode added for MacStatusBar&Dock web apps: one website running as its own app. Site mode is optional and described in [SITE_MODE.md](SITE_MODE.md); without its Info.plist keys the app behaves exactly as Reynard. Everything else is Reynard's work, and the README below is Reynard's own. Please report site mode problems here, not to Reynard.
+> **This is a fork.** MacStatusBarAndDock-WebApps is a fork of [Reynard](https://github.com/minh-ton/reynard-browser) by Minh Ton. Since 19 November 2026 it adds a site mode for MacStatusBar&Dock web apps: one website running as its own app. Site mode is optional and described in [SITE_MODE.md](SITE_MODE.md); without its Info.plist keys the app behaves exactly as Reynard. Everything else is Reynard's work, and the README below is Reynard's own. Please report site mode problems here, not to Reynard.
 >
 > Thanks to [551UK/Gecko-Webpage](https://github.com/551UK/Gecko-Webpage) for showing that a renamed Reynard runs as its own app. No code was copied from it.
 
