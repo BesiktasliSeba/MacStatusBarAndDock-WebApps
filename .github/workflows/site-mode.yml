@@ -60,6 +60,22 @@ jobs:
       - name: Stage the official engine and headers
         run: ./tools/sitemode/stage-engine.sh
 
+      # stage-headers.sh writes ErrorList.h without running Firefox code; here Gecko's own
+      # generator (error_list_h in ErrorList.py, as the export tier calls it) must give the same file.
+      - name: Check ErrorList.h with Gecko's generator
+        run: |
+          . tools/sitemode/engine.lock
+          work="$(mktemp -d)"
+          curl --fail --silent --show-error --location --retry 3 --output "$work/ErrorList.py" \
+            "https://raw.githubusercontent.com/mozilla-firefox/firefox/$FIREFOX_COMMIT/xpcom/base/ErrorList.py"
+          python3 -I -c 'import importlib.util, sys
+          spec = importlib.util.spec_from_file_location("ErrorList", sys.argv[1])
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          module.error_list_h(sys.stdout)' "$work/ErrorList.py" > "$work/ErrorList.h"
+          cmp "$work/ErrorList.h" engine/firefox/obj-aarch64-apple-ios/dist/include/ErrorList.h
+          echo "ErrorList.h is the file Gecko's generator writes."
+
       - name: Install packaging dependencies
         run: brew install ldid
 
