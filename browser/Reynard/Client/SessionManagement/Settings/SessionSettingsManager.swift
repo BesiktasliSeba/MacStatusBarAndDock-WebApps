@@ -29,15 +29,22 @@ final class SessionSettingsManager {
             return GeckoSessionSettings(
                 websiteMode: .mobile,
                 pageZoom: .default,
-                language: languageSetting
+                language: languageSetting,
+                displayMode: displayMode
             )
         }
         
         return GeckoSessionSettings(
             websiteMode: websiteMode.setting(for: url, tabID: tabID),
             pageZoom: pageZoom.setting(for: url),
-            language: languageSetting
+            language: languageSetting,
+            displayMode: displayMode
         )
+    }
+    
+    private var displayMode: GeckoDisplayMode {
+        // A site app is a standalone web app, as an installed manifest app is in other browsers.
+        return SiteMode.isEnabled ? .standalone : .browser
     }
     
     func needsUpdate(

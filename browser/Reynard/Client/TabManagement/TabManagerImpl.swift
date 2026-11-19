@@ -634,6 +634,13 @@ final class TabManagerImplementation: NSObject, TabManager {
     }
     
     func createInitialTab() {
+        if let siteMode = SiteMode.current {
+            // A site app opens at its start page every time, like an installed web app.
+            let index = addTab(selecting: true, windowId: nil, at: nil, isPrivate: false)
+            loadURL(siteMode.startURL.absoluteString, in: regularTabs[index])
+            return
+        }
+
         switch Prefs.HomepageSettings.openingScreen {
         case .lastTab:
             if !restoreTabsIfNeeded() {
