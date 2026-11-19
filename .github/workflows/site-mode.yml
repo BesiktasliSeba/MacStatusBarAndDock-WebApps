@@ -1,0 +1,84 @@
+# Builds the site mode app layer against the official engine named in tools/sitemode/engine.lock.
+name: Build site mode app layer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [site-mode]
+    paths-ignore: ['**.md']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-mode-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ github.repository == 'BesiktasliSeba/MacStatusBarAndDock-WebApps' }}
+    name: App layer on the official engine
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.6'
+
+      - name: Initialize the idevice submodule
+        run: git submodule update --init --recursive support/idevice
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - name: Restore idevice build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            support/idevice/target
+            browser/Reynard/JIT/RPPairing/libidevice_ffi.a
+          key: site-mode-idevice-${{ hashFiles('support/idevice/Cargo.lock', 'tools/development/build-idevice.sh') }}
+
+      - name: Build idevice support library
+        run: ./tools/development/build-idevice.sh
+
+      - name: Restore the official engine
+        uses: actions/cache@v4
+        with:
+          path: engine/firefox/site-mode-engine/*.tipa
+          key: site-mode-engine-${{ hashFiles('tools/sitemode/engine.lock') }}
+
+      - name: Stage the official engine and headers
+        run: ./tools/sitemode/stage-engine.sh
+
+      - name: Install packaging dependencies
+        run: brew install ldid
+
+      - name: Build app
+        run: ./tools/release/build-app.sh --no-signing
+
+      - name: Package TrollStore build
+        run: ./tools/release/create-ipa.sh --trollstore
+
+      - name: Compare with the official build
+        run: ./tools/sitemode/check-build.sh
+
+      - name: Collect the app layer
+        run: ./tools/sitemode/collect-app-layer.sh
+
+      - name: Upload the app layer
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-mode-app-layer
+          path: dist/site-mode/site-mode-app-layer-*.zip
+          if-no-files-found: error
+          retention-days: 30
