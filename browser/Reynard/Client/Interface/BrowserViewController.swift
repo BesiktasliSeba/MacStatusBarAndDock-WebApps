@@ -642,7 +642,13 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             return
         }
         
-        let url = tab.url.flatMap { URL(string: $0) }
+        // A load the app starts (the bar's button, Home) decides by where it goes, so the bar
+        // is gone before that page lays itself out.
+        var urlString = tab.url
+        if case let .pending(pendingURL) = tab.state.displayState {
+            urlString = pendingURL
+        }
+        let url = urlString.flatMap { URL(string: $0) }
         let host = url?.host ?? ""
         if tabManager.isSiteModeWindow(tab) {
             siteModeBar.setMode(.popup(host: host))
