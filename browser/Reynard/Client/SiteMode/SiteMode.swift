@@ -260,6 +260,21 @@ nonisolated struct SiteMode {
         }
     }
 
+    // MARK: - Content Process Kills
+
+    /// Reynard reloads a page whose content process was killed. A page that gets it killed at
+    /// every load (WebAssembly without the signing it needs, for example) would then reload
+    /// about once a second for ever. After `killLoopLimit` kills of one tab's page within
+    /// `killLoopInterval`, site mode stops reloading it and shows the page's error, with Try Again.
+    static let killLoopLimit = 3
+    static let killLoopInterval: TimeInterval = 30
+
+    /// Adds a kill at `now` to a tab's recent kills and tells whether its page may reload.
+    static func reloadsAfterKill(at now: Date, recentKills: inout [Date]) -> Bool {
+        recentKills = recentKills.filter { now.timeIntervalSince($0) < killLoopInterval } + [now]
+        return recentKills.count < killLoopLimit
+    }
+
     // MARK: - Name
 
     /// Puts the app's own name in place of "Reynard" in a user-visible string. Credit lines,

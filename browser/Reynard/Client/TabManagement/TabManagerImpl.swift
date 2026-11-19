@@ -610,6 +610,11 @@ final class TabManagerImplementation: NSObject, TabManager {
             return
         }
         
+        var recoverAutomatically = recoverAutomatically
+        if recoverAutomatically, SiteMode.isEnabled {
+            // A page killed again and again shows its error page instead of reloading for ever.
+            recoverAutomatically = SiteMode.reloadsAfterKill(at: Date(), recentKills: &tab.state.siteModeRecentKills)
+        }
         if recoverAutomatically {
             selectTab(at: location.index, mode: location.mode)
         } else {

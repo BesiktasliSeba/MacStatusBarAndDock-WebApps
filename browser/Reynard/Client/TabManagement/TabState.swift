@@ -62,6 +62,8 @@ final class TabSessionState {
     var openerTabID: UUID?
     /// Site mode: the URL a new window was opened for, until its first navigation.
     var siteModeOpeningURL: String?
+    /// Site mode: recent kills of this tab's content process (SiteMode.reloadsAfterKill).
+    var siteModeRecentKills: [Date] = []
     var sessionNavigationAvailability = SessionNavigationAvailability.unavailable
     var navigationState = NavigationAvailability(canGoBack: false, canGoForward: false)
     var pendingHistoryNavigations: [HistoryNavigationDirection] = []
