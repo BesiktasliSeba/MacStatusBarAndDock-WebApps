@@ -23,10 +23,6 @@ public struct LoadRequest {
     public let hasUserGesture: Bool
     public let isUserInitiatedNavigation: Bool
     public let isDirectNavigation: Bool
-    /// True when Gecko asked for a separate window (nsIBrowserDOMWindow.OPEN_NEWWINDOW),
-    /// as it does for window.open() with window features such as a size. Links with
-    /// target="_blank" ask for a new tab instead.
-    public let isPopupWindow: Bool
 }
 
 private func loadRequestTarget(from value: Int32) -> LoadRequestTarget {
@@ -58,8 +54,7 @@ private func loadRequest(from message: [String: Any?]?) -> LoadRequest? {
         hasUserGesture: hasUserGesture,
         isUserInitiatedNavigation:
             message?["isUserInitiatedNavigation"] as? Bool ?? hasUserGesture,
-        isDirectNavigation: true,
-        isPopupWindow: targetValue == 2
+        isDirectNavigation: true
     )
 }
 
