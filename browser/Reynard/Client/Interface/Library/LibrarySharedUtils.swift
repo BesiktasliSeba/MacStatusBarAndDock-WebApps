@@ -112,6 +112,16 @@ enum LibrarySharedUtils {
             return
         }
         
+        if let siteMode = SiteMode.current {
+            // A site app has no tabs: links from the Library and Settings open in the browser.
+            if let url = URL(string: trimmedURLString) {
+                Task { @MainActor in
+                    siteMode.openOutside(url)
+                }
+            }
+            return
+        }
+        
         let openTab = {
             browserViewController.loadViewIfNeeded()
             guard browserViewController.tabManager.createRegularTab(

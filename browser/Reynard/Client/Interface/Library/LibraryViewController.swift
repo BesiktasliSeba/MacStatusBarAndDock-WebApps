@@ -14,6 +14,10 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
     private let onClose: (() -> Void)?
     
     private var visibleSections: [LibrarySection] {
+        if SiteMode.isEnabled {
+            // A site app keeps its downloads and settings; bookmarks and history open pages in tabs.
+            return [.downloads, .settings]
+        }
         return isPrivateMode ? LibrarySection.allCases.filter { $0 != .history } : LibrarySection.allCases
     }
     

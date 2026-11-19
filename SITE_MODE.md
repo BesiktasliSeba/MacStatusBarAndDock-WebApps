@@ -28,9 +28,10 @@ Site mode turns this app into one website's own app, for the web apps of the Mac
   - Pages in scope load in the app.
   - A link the person follows from the site to another site opens in Reynard when it is installed (`reynard://open?url=`), otherwise in the default browser. So do links opened as new tabs (`target="_blank"`) or in the background.
   - Redirects and scripted navigations stay in the app, so sign-in flows that pass through an identity provider work. Sign-in requests (OAuth 2.0, OpenID Connect, SAML, WS-Federation) also stay.
-  - Popup windows the site opens (`window.open()` with window features, for example a sign-in window) stay in the app, shown over the site, together with every page they load.
+  - Popup windows the site opens (`window.open()` with window features, or a blank window it fills in, for example a sign-in window) stay in the app, shown over the site, together with every page they load.
   - Other URL schemes (`mailto:`, `tel:`, other apps) work as in Reynard.
-- **A slim bar** appears only while a popup window or a page outside the scope is showing. It names the page's host. Its button closes the popup, or goes back to the start page.
+- **A slim bar** appears only while a window over the site (a popup the site opened, or a tab an add-on opened) or a page outside the scope is showing. It names the page's host. Its button closes that window, or goes back to the start page.
+- **Library and Settings.** The Library shows Downloads and Settings only. Its links open in the browser, About links to this fork's source, and clearing open tabs returns to the start page.
 - **Menus and keyboard shortcuts** are the site's: Print, Open in Browser, Copy Link, Downloads and Settings; Back, Forward and Home; Reload and zoom. Browser commands (tabs, address bar, history and bookmark lists, reader, sidebar, Find in Page) are removed. In link menus, Open Link in New Tab opens the browser and link previews are off.
 - **The updater is off.** A site app never checks for or offers Reynard updates.
 - **Its own name.** Text that would name Reynard shows the app's `CFBundleDisplayName` instead.

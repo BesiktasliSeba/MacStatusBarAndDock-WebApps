@@ -89,7 +89,10 @@ final class AboutSettingsSection {
     private func url(for row: Row) -> URL? {
         switch row {
         case .sourceCode:
-            return URL(string: "https://github.com/minh-ton/reynard-browser")
+            // A site app is built from the MacStatusBarAndDock-WebApps fork, so its source is there.
+            return SiteMode.isEnabled
+            ? URL(string: "https://github.com/BesiktasliSeba/MacStatusBarAndDock-WebApps")
+            : URL(string: "https://github.com/minh-ton/reynard-browser")
         case .supportProject:
             return URL(string: "https://buymeacoffee.com/hnimnot")
         case .githubProfile:
