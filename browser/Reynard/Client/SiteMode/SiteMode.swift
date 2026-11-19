@@ -275,6 +275,25 @@ nonisolated struct SiteMode {
         return recentKills.count < killLoopLimit
     }
 
+    // MARK: - The Site Closing Itself
+
+    /// When the site's own page calls window.close(), the engine marks that page's window
+    /// closed before the app is asked: window.closed is true from then on and every message
+    /// posted to the window is dropped, so a sign-in window could no longer report back. The
+    /// app keeps its site, so the site opens again at its start page in a new session. A page
+    /// that closes itself again within `reopenInterval` of that keeps its window, so a start
+    /// page that closes itself cannot reload for ever.
+    static let reopenInterval: TimeInterval = 10
+
+    /// Tells whether the site opens again after its page closed itself at `now`, and records it.
+    static func reopensAfterClose(at now: Date, lastReopen: inout Date?) -> Bool {
+        if let last = lastReopen, now.timeIntervalSince(last) < reopenInterval {
+            return false
+        }
+        lastReopen = now
+        return true
+    }
+
     // MARK: - Name
 
     /// Puts the app's own name in place of "Reynard" in a user-visible string. Credit lines,
