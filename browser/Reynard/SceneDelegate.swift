@@ -83,6 +83,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         
+        if let siteMode = SiteMode.current {
+            // A site app shows its own pages and hands every other link to the browser.
+            guard siteMode.contains(resolvedURL) else {
+                siteMode.openOutside(resolvedURL)
+                return
+            }
+            DispatchQueue.main.async {
+                browserViewController.loadViewIfNeeded()
+                browserViewController.tabManager.browse(to: resolvedURL.absoluteString)
+            }
+            return
+        }
+        
         DispatchQueue.main.async {
             browserViewController.loadViewIfNeeded()
             browserViewController.sidebarCoordinator.loadContentIfNeeded()

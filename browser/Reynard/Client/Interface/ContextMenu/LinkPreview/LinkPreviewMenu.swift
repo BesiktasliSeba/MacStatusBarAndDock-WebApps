@@ -42,7 +42,7 @@ struct LinkPreviewMenu {
                     openInNewTab()
                 },
             ]
-            if !isPrivate {
+            if !isPrivate && !SiteMode.isEnabled {
                 linkActions.append(
                     UIAction(title: NSLocalizedString("Open Link in New Private Tab", comment: ""), image: UIImage(named: "reynard.plus.square.fill.on.square.fill")) { _ in
                         openInNewPrivateTab()

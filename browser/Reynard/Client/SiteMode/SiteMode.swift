@@ -151,9 +151,13 @@ struct SiteMode {
     ///   opens outside. Redirects and scripted navigations stay.
     /// - New windows stay when the page asked for a popup window (window.open() with window
     ///   features), and open outside when they are links with target="_blank".
+    /// - Links opened in the background (Command-click) open outside: there are no tabs here.
     func navigation(for request: LoadRequest, inPopup: Bool, pageURL: String?) -> Navigation? {
         guard let url = URL(string: request.uri), URLUtils.isWebURL(url) else {
             return nil
+        }
+        if request.target == .background {
+            return .openOutside(url)
         }
         if contains(url) || inPopup || Self.isSignInRequest(url) {
             return .stay

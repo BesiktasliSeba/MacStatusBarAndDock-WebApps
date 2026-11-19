@@ -34,6 +34,16 @@ extension BrowserViewController: ContextMenuCoordinatorHost {
     }
     
     func contextMenuOpenLink(_ url: URL, disposition: TabOpenDisposition) {
+        if let siteMode = SiteMode.current {
+            // A site app has no tabs: a link opened in a new tab goes to the browser.
+            if disposition == .currentTab && siteMode.contains(url) {
+                tabManager.browse(to: url.absoluteString)
+            } else {
+                siteMode.openOutside(url)
+            }
+            return
+        }
+        
         let mode: TabMode
         let target: TabInsertionTarget
         

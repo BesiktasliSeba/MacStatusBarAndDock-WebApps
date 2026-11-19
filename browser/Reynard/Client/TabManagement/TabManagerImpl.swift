@@ -1588,10 +1588,16 @@ extension TabManagerImplementation: NavigationDelegate {
     }
     
     func onLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny {
+        if let decision = siteModeDecision(for: request, in: session, isPreNavigation: false) {
+            return decision
+        }
         return await sessionManager.universalLinkManager.decideHandoff(for: request, in: session)
     }
     
     func onPreNavigation(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny {
+        if let decision = siteModeDecision(for: request, in: session, isPreNavigation: true) {
+            return decision
+        }
         return await sessionManager.universalLinkManager.decideHandoff(for: request, in: session)
     }
     
@@ -1672,6 +1678,12 @@ extension TabManagerImplementation: NavigationDelegate {
         scheduleFaviconUpdate(forTabAt: index, mode: mode)
         persistState()
         
+        if SiteMode.isEnabled {
+            // No tab strip here: the window the site opened shows at once, over the site.
+            selectTab(at: index, mode: mode)
+            return newSession
+        }
+        
         guard target != .background else { return newSession }
         
         if let previousSession = selectedTab?.session,
@@ -1683,6 +1695,47 @@ extension TabManagerImplementation: NavigationDelegate {
             self?.selectTab(at: index, mode: mode)
         }
         return newSession
+    }
+}
+
+// MARK: - Site Mode
+
+extension TabManagerImplementation {
+    /// Site mode's answer for a top-level load, or nil to keep Reynard's own handling.
+    ///
+    /// Gecko asks about a load in the current window twice: first through onPreNavigation,
+    /// where isUserInitiatedNavigation means a link the person followed, then through
+    /// onLoadRequest, where it only means a user gesture. Links leave the app only from the
+    /// first, so a sign-in button that moves the page by script stays in the app.
+    private func siteModeDecision(
+        for request: LoadRequest,
+        in session: GeckoSession,
+        isPreNavigation: Bool
+    ) -> AllowOrDeny? {
+        guard let siteMode = SiteMode.current else {
+            return nil
+        }
+        if !isPreNavigation && request.target == .current {
+            guard let url = URL(string: request.uri), URLUtils.isWebURL(url) else {
+                return nil
+            }
+            return .allow
+        }
+        
+        let tab = tabLocation(for: session).map { tabs(for: $0.mode)[$0.index] }
+        switch siteMode.navigation(
+            for: request,
+            inPopup: tab?.state.openerTabID != nil,
+            pageURL: tab?.url
+        ) {
+        case nil:
+            return nil
+        case .stay:
+            return .allow
+        case .openOutside(let url):
+            siteMode.openOutside(url)
+            return .deny
+        }
     }
 }
 

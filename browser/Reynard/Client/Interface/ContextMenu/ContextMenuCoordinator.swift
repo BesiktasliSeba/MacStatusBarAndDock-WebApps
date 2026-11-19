@@ -100,7 +100,7 @@ final class ContextMenuCoordinator: NSObject {
             return
         }
         
-        if pendingContext?.allowsPreview != true || !Prefs.BrowsingSettings.showLinkPreviews {
+        if pendingContext?.allowsPreview != true || !Prefs.BrowsingSettings.showLinkPreviews || SiteMode.isEnabled {
             guard case .link(let url) = pendingContext?.target else {
                 return
             }
@@ -267,7 +267,7 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
         
         return LinkPreviewMenu.configuration(
             for: context,
-            showsPreview: context.allowsPreview && Prefs.BrowsingSettings.showLinkPreviews,
+            showsPreview: context.allowsPreview && Prefs.BrowsingSettings.showLinkPreviews && !SiteMode.isEnabled,
             isPrivate: host.contextMenuSelectedTabIsPrivate,
             sessionManager: sessionManager,
             sourceSessionState: host.contextMenuSelectedSession?.currentSessionState,
