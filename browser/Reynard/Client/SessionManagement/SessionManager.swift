@@ -220,6 +220,11 @@ final class SessionManager {
         deferredExternalResponseCleanups.removeValue(forKey: identifier)
     }
     
+    /// Whether a download from the session holds it open: closing it then waits for the download.
+    func hasExternalResponse(for session: GeckoSession) -> Bool {
+        return externalResponseReferenceCounts[ObjectIdentifier(session)] != nil
+    }
+    
     // MARK: - Session Cleanup
     
     func close(_ session: GeckoSession) {

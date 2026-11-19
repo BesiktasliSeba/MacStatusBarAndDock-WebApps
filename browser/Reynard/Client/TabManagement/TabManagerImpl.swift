@@ -1751,15 +1751,18 @@ extension TabManagerImplementation {
     /// The site's own page closed itself, so the engine has already marked its window closed.
     /// The site opens again at its start page in a new session, as at launch, unless it did
     /// so a moment ago (SiteMode.reopensAfterClose). The session is replaced the way a killed
-    /// tab's is.
+    /// tab's is. While a download from the page runs, its session cannot close yet, so the
+    /// page stays as it is.
     private func reopenSiteModeSite(_ tab: Tab, at location: (mode: TabMode, index: Int)) {
         guard let siteMode = SiteMode.current,
+              !sessionManager.hasExternalResponse(for: tab.session),
               SiteMode.reopensAfterClose(at: Date(), lastReopen: &tab.state.siteModeReopenedAt) else {
             return
         }
         sessionManager.close(tab.session)
         tab.state.restoreState = .pendingURL(siteMode.startURL.absoluteString)
-        if selectedTab === tab {
+        // A session opens only in the foreground; otherwise applicationDidBecomeActive() opens it.
+        if selectedTab === tab, sessionManager.isForeground {
             selectTab(at: location.index, mode: location.mode)
         }
     }
