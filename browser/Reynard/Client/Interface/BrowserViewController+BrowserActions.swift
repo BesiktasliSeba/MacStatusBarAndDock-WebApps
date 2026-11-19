@@ -54,8 +54,10 @@ extension BrowserViewController {
         initialSection: LibrarySection = .bookmarks,
         startsEditingBookmarks: Bool = false
     ) {
+        // A site app has no sidebar: there the library opens as a sheet on iPad too.
         if browserLayout.interfaceIdiom == .pad,
-           browserLayout.chromeMode == .pad {
+           browserLayout.chromeMode == .pad,
+           !SiteMode.isEnabled {
             sidebarCoordinator.showSection(
                 initialSection,
                 startsEditingBookmarks: startsEditingBookmarks
@@ -76,7 +78,8 @@ extension BrowserViewController {
     
     func toggleLibrary(section: LibrarySection) {
         if browserLayout.interfaceIdiom == .pad,
-           browserLayout.chromeMode == .pad {
+           browserLayout.chromeMode == .pad,
+           !SiteMode.isEnabled {
             (splitViewController as? SidebarViewController)?.toggleSection(section)
             return
         }
