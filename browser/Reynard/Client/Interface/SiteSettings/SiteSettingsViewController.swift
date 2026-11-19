@@ -539,7 +539,8 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
             GeckoSessionSettings(
                 websiteMode: session.settings.websiteMode,
                 pageZoom: PageZoomSetting(level: level),
-                language: session.settings.language
+                language: session.settings.language,
+                displayMode: session.settings.displayMode
             )
         )
     }

@@ -73,6 +73,7 @@ public class GeckoSession {
                 "userAgentMode": settings.websiteMode.userAgentMode,
                 "viewportMode": settings.websiteMode.viewportMode,
                 "pageZoom": settings.pageZoom.scale,
+                "displayMode": settings.displayMode.rawValue,
             ])
     }
     
@@ -215,7 +216,7 @@ public class GeckoSession {
             "buildIDOverride": sessionSettings.websiteMode.buildIDOverride,
             "viewportMode": sessionSettings.websiteMode.viewportMode,
             "pageZoom": sessionSettings.pageZoom.scale,
-            "displayMode": 0,
+            "displayMode": sessionSettings.displayMode.rawValue,
             "suspendMediaWhenInactive": false,
             "allowJavascript": true,
             "fullAccessibilityTree": false,

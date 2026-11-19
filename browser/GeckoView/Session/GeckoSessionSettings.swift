@@ -73,6 +73,15 @@ public struct LanguageSetting: Equatable {
     }
 }
 
+/// The display mode pages see through the `display-mode` media query, as in the
+/// Web App Manifest `display` member. The raw values are GeckoViewSettings' constants.
+public enum GeckoDisplayMode: Int, Equatable {
+    case browser = 0
+    case minimalUI = 1
+    case standalone = 2
+    case fullscreen = 3
+}
+
 public struct GeckoSessionSettings: Equatable {
     public static let `default` = GeckoSessionSettings(
         websiteMode: .mobile,
@@ -83,14 +92,17 @@ public struct GeckoSessionSettings: Equatable {
     public let websiteMode: WebsiteModeSetting
     public let pageZoom: PageZoomSetting
     public let language: LanguageSetting
+    public let displayMode: GeckoDisplayMode
     
     public init(
         websiteMode: WebsiteModeSetting,
         pageZoom: PageZoomSetting,
-        language: LanguageSetting
+        language: LanguageSetting,
+        displayMode: GeckoDisplayMode = .browser
     ) {
         self.websiteMode = websiteMode
         self.pageZoom = pageZoom
         self.language = language
+        self.displayMode = displayMode
     }
 }
