@@ -33,7 +33,24 @@ if [ -n "$(git -C "$ROOT_DIR" diff --name-only "$APP_COMMIT" HEAD -- engine/rele
 	exit 1
 fi
 
+# Stage only into an uninitialised engine/firefox (or one this script staged before), never
+# over a Firefox checkout or a real Gecko build: its dist/ takes hours to rebuild.
+MARKER="$WORK_DIR/staged-by-site-mode"
+if [ -e "$FIREFOX_DIR/.git" ]; then
+	echo "engine/firefox is an initialised Firefox checkout: not staging over it." >&2
+	exit 1
+fi
+if [ -d "$FIREFOX_DIR" ] && [ ! -f "$MARKER" ]; then
+	for entry in "$FIREFOX_DIR"/* "$FIREFOX_DIR"/.[!.]*; do
+		if [ -e "$entry" ] && [ "$entry" != "$WORK_DIR" ]; then
+			echo "engine/firefox holds files this script did not stage ($entry): not staging over them." >&2
+			exit 1
+		fi
+	done
+fi
+
 mkdir -p "$WORK_DIR"
+touch "$MARKER"
 if [ ! -f "$TIPA" ]; then
 	curl --fail --location --output "$TIPA" \
 		"https://github.com/minh-ton/reynard-browser/releases/download/$ENGINE_TAG/$ENGINE_ASSET"
