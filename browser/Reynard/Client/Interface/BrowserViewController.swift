@@ -48,6 +48,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     let tabOverview = TabOverview()
     let contentView = ContentView()
     lazy var browserChrome = BrowserChrome()
+    private lazy var siteModeBar = SiteModeBar()
     var tabBar: TabBar { return browserChrome.tabBar }
     
     private(set) lazy var toolbarController = ToolbarController(
@@ -225,7 +226,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         let showsHomepage = tabManager.selectedTab.map(homepageOverlayCoordinator.isHomepageTab) ?? false
         toolbarController.updateLayout(
             chromeMode: browserLayout.chromeMode,
-            isToolbarEnabled: !isShowingFullscreenMedia,
+            isToolbarEnabled: !isShowingFullscreenMedia && !SiteMode.isEnabled,
             extendsContentBehindToolbar: showsHomepage
         )
         homepageOverlayCoordinator.updateVisibleContentInsets()
@@ -318,6 +319,18 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             tabOverview.topAnchor.constraint(equalTo: view.topAnchor),
             tabOverview.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        
+        if SiteMode.isEnabled {
+            siteModeBar.onClose = { [weak self] in
+                self?.closeSiteModeBar()
+            }
+            view.addSubview(siteModeBar)
+            NSLayoutConstraint.activate([
+                siteModeBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                siteModeBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                siteModeBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            ])
+        }
     }
     
     private func configureBrowserChromeActions() {
@@ -575,8 +588,14 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     }
     
     func applyBrowserLayout(animated: Bool = false) {
+        if SiteMode.isEnabled {
+            updateSiteModeBar()
+        }
+        
         if isShowingFullscreenMedia {
             applyFullscreenLayout()
+        } else if SiteMode.isEnabled {
+            applySiteModeLayout()
         } else {
             switch browserLayout.chromeMode {
             case .phone:
@@ -601,6 +620,50 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             bottomAnchor: view.bottomAnchor
         )
         tabBar.setVisibility(.hidden, animated: false)
+    }
+    
+    private func applySiteModeLayout() {
+        // Site mode shows only the page, below the status bar and the site mode bar.
+        contentView.applyLayout(
+            ContentView.LayoutState(mode: .standard),
+            topAnchor: siteModeBar.bottomAnchor,
+            bottomAnchor: view.bottomAnchor
+        )
+        tabBar.setVisibility(.hidden, animated: false)
+    }
+    
+    func updateSiteModeBar() {
+        guard let siteMode = SiteMode.current else {
+            return
+        }
+        guard !isShowingFullscreenMedia,
+              let tab = tabManager.selectedTab else {
+            siteModeBar.setMode(.hidden)
+            return
+        }
+        
+        let url = tab.url.flatMap { URL(string: $0) }
+        let host = url?.host ?? ""
+        if tab.state.openerTabID != nil {
+            siteModeBar.setMode(.popup(host: host))
+        } else if let url, URLUtils.isWebURL(url), !siteMode.contains(url) {
+            siteModeBar.setMode(.outside(host: host))
+        } else {
+            siteModeBar.setMode(.hidden)
+        }
+    }
+    
+    private func closeSiteModeBar() {
+        guard let siteMode = SiteMode.current,
+              let tab = tabManager.selectedTab else {
+            return
+        }
+        
+        if tab.state.openerTabID != nil {
+            tabManager.removeTab(at: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode, behavior: .recent)
+        } else {
+            tabManager.browse(to: siteMode.startURL.absoluteString)
+        }
     }
     
     private func applyPhoneLayout() {
@@ -662,13 +725,15 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     }
     
     private func applyBrowserChromeLayout(animated: Bool) {
-        let searchState = isShowingFullscreenMedia
+        // Site mode hides the browser chrome the same way full-screen media does.
+        let hidesBrowserChrome = isShowingFullscreenMedia || SiteMode.isEnabled
+        let searchState = hidesBrowserChrome
         ? BrowserChrome.SearchState.inactive
         : (overlayCoordinator.chromeStateForAddressBarScrollDismissal(layout: browserLayout) ?? searchOverlayCoordinator.chromeState)
         browserChrome.apply(state: BrowserChrome.State(
             position: browserLayout.chromePosition,
             mode: browserLayout.chromeMode,
-            presentation: isShowingFullscreenMedia
+            presentation: hidesBrowserChrome
             ? .fullscreenMedia
             : (tabOverview.isPresented ? .tabOverview : .browsing),
             search: searchState,
@@ -684,6 +749,12 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
     private func resolveBrowserLayout() -> BrowserLayout {
         let interfaceIdiom = traitCollection.userInterfaceIdiom
         let orientation = currentViewportOrientation()
+        
+        if SiteMode.isEnabled {
+            // With no browser chrome, one layout fits every window size; the compact one would
+            // keep a collapsed toolbar.
+            return resolvePadLayout(interfaceIdiom: interfaceIdiom, orientation: orientation)
+        }
         
         if interfaceIdiom == .pad {
             return isCompactPadLayout

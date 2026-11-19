@@ -637,7 +637,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         if let siteMode = SiteMode.current {
             // A site app opens at its start page every time, like an installed web app.
             let index = addTab(selecting: true, windowId: nil, at: nil, isPrivate: false)
-            loadURL(siteMode.startURL.absoluteString, in: regularTabs[index])
+            browse(to: siteMode.startURL.absoluteString, in: regularTabs[index])
             return
         }
 

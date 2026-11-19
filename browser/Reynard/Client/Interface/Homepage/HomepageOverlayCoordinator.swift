@@ -64,7 +64,8 @@ final class HomepageOverlayCoordinator {
     // MARK: - State
     
     func isHomepageTab(_ tab: Tab) -> Bool {
-        guard tab.state.loadError == nil,
+        guard !SiteMode.isEnabled,
+              tab.state.loadError == nil,
               showsHomepageForBlankTabs || tab.state.showsStartupHomepage else {
             return false
         }

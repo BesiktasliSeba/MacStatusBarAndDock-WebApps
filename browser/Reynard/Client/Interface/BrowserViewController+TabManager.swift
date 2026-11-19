@@ -188,6 +188,7 @@ extension BrowserViewController: TabManagerDelegate {
                 updateNavigationButtons()
                 homepageOverlayCoordinator.updatePresentation(animated: true)
                 requestHomepageAddressBarFocus()
+                updateSiteModeBar()
             }
             
         case .favicon:

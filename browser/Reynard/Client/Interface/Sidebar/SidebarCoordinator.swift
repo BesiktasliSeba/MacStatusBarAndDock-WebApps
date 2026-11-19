@@ -53,7 +53,8 @@ final class SidebarCoordinator {
     }
     
     var hostsSidebar: Bool {
-        return canHostSidebar && host?.sidebarInterfaceIdiom == .pad
+        // A site app has no sidebar: its root browser shows the site directly.
+        return canHostSidebar && host?.sidebarInterfaceIdiom == .pad && !SiteMode.isEnabled
     }
     
     // MARK: - Lifecycle
