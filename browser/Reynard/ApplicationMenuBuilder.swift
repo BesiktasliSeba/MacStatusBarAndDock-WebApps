@@ -218,8 +218,53 @@ enum ApplicationMenuBuilder {
         )
     }()
     
-    static let keyCommands = commands.file + commands.edit + commands.view +
-    commands.history + commands.bookmarks + commands.window
+    /// Site mode's menus: the site's own commands, none of the browser's (tabs, address bar,
+    /// history, bookmarks, reader, sidebar, find bar), which have no interface in site mode.
+    private static let siteModeCommands: (file: [UICommand], view: [UICommand], history: [UICommand]) = {
+        func keeping(_ keyCommands: [UIKeyCommand], _ actions: [Selector]) -> [UICommand] {
+            return keyCommands.filter { $0.action.map(actions.contains) == true }
+        }
+        
+        let file = [
+            UICommand(
+                title: NSLocalizedString("Open in Browser", comment: "Site mode: open the current page in the browser"),
+                action: #selector(BrowserViewController.openInBrowserCommand(_:))
+            ),
+            UICommand(
+                title: NSLocalizedString("Copy Link", comment: ""),
+                action: #selector(BrowserViewController.copyLinkCommand(_:))
+            ),
+        ] + keeping(commands.file, [
+            #selector(BrowserViewController.printPageKeyCommand(_:)),
+            #selector(BrowserViewController.showDownloadsKeyCommand(_:)),
+            #selector(BrowserViewController.showSettingsKeyCommand(_:)),
+        ])
+        
+        let view = keeping(commands.view, [
+            #selector(BrowserViewController.reloadPageKeyCommand(_:)),
+            #selector(BrowserViewController.zoomInKeyCommand(_:)),
+            #selector(BrowserViewController.zoomOutKeyCommand(_:)),
+            #selector(BrowserViewController.actualSizeKeyCommand(_:)),
+        ])
+        
+        let history = keeping(commands.history, [
+            #selector(BrowserViewController.goBackKeyCommand(_:)),
+            #selector(BrowserViewController.goForwardKeyCommand(_:)),
+        ]) + [
+            UIKeyCommand(
+                title: NSLocalizedString("Home", comment: "Site mode: go to the web app's start page"),
+                action: #selector(BrowserViewController.goHomeKeyCommand(_:)),
+                input: "h",
+                modifierFlags: [.command, .shift]
+            ),
+        ]
+        
+        return (file, view, history)
+    }()
+    
+    static let keyCommands: [UIKeyCommand] = SiteMode.isEnabled
+    ? (siteModeCommands.file + siteModeCommands.view + siteModeCommands.history).compactMap { $0 as? UIKeyCommand }
+    : commands.file + commands.edit + commands.view + commands.history + commands.bookmarks + commands.window
     
     static func build(with builder: UIMenuBuilder) {
         guard builder.system == UIMenuSystem.main else {
@@ -233,6 +278,11 @@ enum ApplicationMenuBuilder {
         
         if #available(iOS 15.0, *) {
             builder.remove(menu: .sidebar)
+        }
+        
+        if SiteMode.isEnabled {
+            buildSiteMode(with: builder)
+            return
         }
         
         builder.insertChild(UIMenu(title: "", options: .displayInline, children: commands.file), atEndOfMenu: .file)
@@ -254,5 +304,18 @@ enum ApplicationMenuBuilder {
         builder.insertSibling(bookmarksMenu, afterMenu: historyMenu.identifier)
         
         builder.insertChild(UIMenu(title: "", options: .displayInline, children: commands.window), atEndOfMenu: .window)
+    }
+    
+    private static func buildSiteMode(with builder: UIMenuBuilder) {
+        builder.insertChild(UIMenu(title: "", options: .displayInline, children: siteModeCommands.file), atEndOfMenu: .file)
+        builder.insertChild(UIMenu(title: "", options: .displayInline, children: siteModeCommands.view), atEndOfMenu: .view)
+        builder.insertSibling(
+            UIMenu(
+                title: NSLocalizedString("History", comment: ""),
+                identifier: UIMenu.Identifier("com.minh-ton.Reynard.ApplicationMenu.History"),
+                children: siteModeCommands.history
+            ),
+            beforeMenu: .window
+        )
     }
 }

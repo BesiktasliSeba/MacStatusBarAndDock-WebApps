@@ -269,3 +269,32 @@ extension BrowserViewController {
         return URL(string: urlString)?.host != nil
     }
 }
+
+// MARK: - Site Mode
+
+extension BrowserViewController {
+    @objc func goHomeKeyCommand(_ sender: UICommand) {
+        guard let siteMode = SiteMode.current else {
+            return
+        }
+        exitFullscreenIfNeeded()
+        tabManager.browse(to: siteMode.startURL.absoluteString)
+    }
+    
+    @objc func openInBrowserCommand(_ sender: UICommand) {
+        guard let siteMode = SiteMode.current,
+              let tab = tabManager.selectedTab,
+              let url = tabManager.shareableURL(for: tab) else {
+            return
+        }
+        siteMode.openOutside(url)
+    }
+    
+    @objc func copyLinkCommand(_ sender: UICommand) {
+        guard let tab = tabManager.selectedTab,
+              let url = tabManager.shareableURL(for: tab) else {
+            return
+        }
+        UIPasteboard.general.string = url.absoluteString
+    }
+}
