@@ -1733,7 +1733,9 @@ extension TabManagerImplementation {
         case .stay:
             return .allow
         case .openOutside(let url):
-            siteMode.openOutside(url)
+            Task { @MainActor in
+                siteMode.openOutside(url)
+            }
             return .deny
         }
     }

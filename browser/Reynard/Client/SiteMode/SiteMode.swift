@@ -29,14 +29,16 @@ import UIKit
 /// (CFBundleDisplayName) and its icon from the bundle's icon keys.
 ///
 /// Without the key the app is the normal browser and nothing here changes its behaviour.
-struct SiteMode {
+///
+/// SiteMode is nonisolated so that string lookups on any thread can use the app's name.
+nonisolated struct SiteMode {
     static let current = SiteMode(infoDictionary: Bundle.main.infoDictionary)
 
     static var isEnabled: Bool {
         return current != nil
     }
 
-    struct ScopeRule: Equatable {
+    nonisolated struct ScopeRule: Equatable {
         let scheme: String
         let host: String
         private(set) var includesSubdomains: Bool
@@ -88,7 +90,7 @@ struct SiteMode {
     }
 
     /// What site mode does with a top-level load.
-    enum Navigation: Equatable {
+    nonisolated enum Navigation: Equatable {
         /// Load it in the app.
         case stay
         /// Open it in the browser and do not load it here.
@@ -193,6 +195,7 @@ struct SiteMode {
     // MARK: - Leaving The Site
 
     /// Opens the URL in Reynard when it is installed, else in the system's default browser.
+    @MainActor
     func openOutside(_ url: URL) {
         guard !Self.bundleClaims(scheme: "reynard"),
               let encodedURL = url.absoluteString.addingPercentEncoding(
@@ -210,6 +213,7 @@ struct SiteMode {
         }
     }
 
+    @MainActor
     private static func openInDefaultBrowser(_ url: URL) {
         // A site app must not claim web URLs; if it does, never hand a link back to itself.
         guard let scheme = url.scheme, !bundleClaims(scheme: scheme) else {
