@@ -644,7 +644,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
         
         let url = tab.url.flatMap { URL(string: $0) }
         let host = url?.host ?? ""
-        if tab.state.openerTabID != nil {
+        if tabManager.isSiteModeWindow(tab) {
             siteModeBar.setMode(.popup(host: host))
         } else if let url, URLUtils.isWebURL(url), !siteMode.contains(url) {
             siteModeBar.setMode(.outside(host: host))
@@ -659,7 +659,7 @@ final class BrowserViewController: UIViewController, GeckoScreenOrientationDeleg
             return
         }
         
-        if tab.state.openerTabID != nil {
+        if tabManager.isSiteModeWindow(tab) {
             tabManager.removeTab(at: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode, behavior: .recent)
         } else {
             tabManager.browse(to: siteMode.startURL.absoluteString)

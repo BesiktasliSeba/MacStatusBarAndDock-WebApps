@@ -141,9 +141,10 @@ nonisolated struct SiteMode {
         return contains(url)
     }
 
-    /// Decides a top-level load. Returns nil for URLs that are not http or https, which keep
-    /// Reynard's own handling (mailto:, tel:, other apps' schemes, about:blank).
+    /// Decides a top-level load. Returns nil for URLs that are not http, https or about, which
+    /// keep Reynard's own handling (mailto:, tel:, other apps' schemes).
     ///
+    /// - about: pages stay: a site opens a blank window and then fills it in (sign-in windows).
     /// - Pages inside the scope stay.
     /// - Everything inside a window the site opened stays, so sign-in windows can move between
     ///   hosts and report back to the page that opened them.
@@ -155,7 +156,13 @@ nonisolated struct SiteMode {
     ///   features), and open outside when they are links with target="_blank".
     /// - Links opened in the background (Command-click) open outside: there are no tabs here.
     func navigation(for request: LoadRequest, inPopup: Bool, pageURL: String?) -> Navigation? {
-        guard let url = URL(string: request.uri), URLUtils.isWebURL(url) else {
+        guard let url = URL(string: request.uri) else {
+            return nil
+        }
+        if url.scheme?.lowercased() == "about" {
+            return .stay
+        }
+        guard URLUtils.isWebURL(url) else {
             return nil
         }
         if request.target == .background {

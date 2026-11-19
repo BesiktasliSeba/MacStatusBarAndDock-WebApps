@@ -640,7 +640,7 @@ final class TabManagerImplementation: NSObject, TabManager {
             browse(to: siteMode.startURL.absoluteString, in: regularTabs[index])
             return
         }
-
+        
         switch Prefs.HomepageSettings.openingScreen {
         case .lastTab:
             if !restoreTabsIfNeeded() {
@@ -1679,8 +1679,17 @@ extension TabManagerImplementation: NavigationDelegate {
         persistState()
         
         if SiteMode.isEnabled {
-            // No tab strip here: the window the site opened shows at once, over the site.
-            selectTab(at: index, mode: mode)
+            // No tab strip here: the window the site opened shows over the site. GeckoView opens
+            // the new session right after this returns; selecting it before that would make
+            // recoverSelectedSessionIfNeeded() replace it and cut the popup off from its opener.
+            DispatchQueue.main.async { [weak self] in
+                guard let self,
+                      newSession.isOpen(),
+                      let location = self.tabLocation(for: newTab.id) else {
+                    return
+                }
+                self.selectTab(at: location.index, mode: location.mode)
+            }
             return newSession
         }
         
@@ -1701,6 +1710,12 @@ extension TabManagerImplementation: NavigationDelegate {
 // MARK: - Site Mode
 
 extension TabManagerImplementation {
+    /// In site mode the first regular tab is the site itself. Every other tab is a window over
+    /// it: a popup the site opened, or a tab an add-on opened.
+    func isSiteModeWindow(_ tab: Tab) -> Bool {
+        return tab.state.openerTabID != nil || regularTabs.first !== tab
+    }
+    
     /// Site mode's answer for a top-level load, or nil to keep Reynard's own handling.
     ///
     /// Gecko asks about a load in the current window twice: first through onPreNavigation,
@@ -1725,7 +1740,7 @@ extension TabManagerImplementation {
         let tab = tabLocation(for: session).map { tabs(for: $0.mode)[$0.index] }
         switch siteMode.navigation(
             for: request,
-            inPopup: tab?.state.openerTabID != nil,
+            inPopup: tab.map(isSiteModeWindow) ?? false,
             pageURL: tab?.url
         ) {
         case nil:
